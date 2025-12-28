@@ -26,6 +26,8 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final ProcessingStatusRepository processingStatusRepository;
+
+    private final ProductService productService;
     
     @Transactional(readOnly = true)
     public List<Order> getAllOrders() {
@@ -64,7 +66,30 @@ public class OrderService {
         // * order 를 저장
         // * 각 Product 의 재고를 수정
         // * placeOrder 메소드의 시그니처는 변경하지 않은 채 구현하세요.
-        return null;
+
+        Order order = Order.builder()
+                .customerName(customerName)
+                .customerEmail(customerEmail)
+                .status(Order.OrderStatus.PENDING)
+                .orderDate(LocalDateTime.now())
+                .items(new ArrayList<>())
+                .totalAmount(BigDecimal.ZERO)
+                .build();
+
+        for (int i = 0; i < productIds.size(); i++) {
+            Product product = productRepository.findById(productIds.get(i)).get();
+            int increaseQuantity = quantities.get(i);
+            product.increaseStock(increaseQuantity);
+            OrderItem orderItem = OrderItem.builder()
+                    .order(order)
+                    .product(product)
+                    .quantity(increaseQuantity)
+                    .build();
+            order.getItems().add(orderItem);
+        }
+
+        orderRepository.save(order);
+        return order;
     }
 
     /**
